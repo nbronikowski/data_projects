@@ -40,7 +40,7 @@ def add_text_box(ax,control_gdf):
 
 	# Add text box for control point concentration and location
 	control_point_text = f"Control Point (Blue):\nConcentration: {control_gdf['control_concentration'][0]:.1f} ppm\nLocation: ({lon:.2f}, {lat:.2f})"
-	ax.text(0.02, 0.98, control_point_text, transform=ax.transAxes, fontsize=10, verticalalignment='top', 
+	ax.text(0.02, 0.98, control_point_text, transform=ax.transAxes, fontsize=10, verticalalignment='top',
 			bbox=dict(facecolor='white', edgecolor='black', boxstyle='round,pad=0.5'))
 	
 
@@ -83,7 +83,7 @@ def add_inset_map(ax, lon1, lat1, lon2, lat2, gdf, control_gdf):
 	from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 
 	transformer_inset = Transformer.from_crs('EPSG:4326', 'EPSG:3857')
-	iax = inset_axes(ax, width="35%", height="35%", loc=1, 
+	iax = inset_axes(ax, width="35%", height="35%", loc=1,
 					 bbox_to_anchor=(0.2, 0.23, 0.8, 0.8), bbox_transform=ax.transAxes, borderpad=0.2)
 	
 	inset_xmin, inset_ymin = transformer_inset.transform(lat1, lon1)
@@ -101,15 +101,33 @@ def add_inset_map(ax, lon1, lat1, lon2, lat2, gdf, control_gdf):
 			 [main_ymin, main_ymax, main_ymax, main_ymin, main_ymin],
 			 color='red', linewidth=1.5, linestyle='-')
 	iax.set_xticks([]), iax.set_yticks([])
+	
+def add_inset_map2(ax, lon1, lat1, lon2, lat2, gdf, gdf_filt):
+	from mpl_toolkits.axes_grid1.inset_locator import inset_axes
+	cmap = ListedColormap([plt.cm.viridis(i / 10) for i in range(10)])
+	transformer_inset = Transformer.from_crs('EPSG:4326', 'EPSG:3857')
+	iax = inset_axes(ax, width="35%", height="35%", loc=1,
+					 bbox_to_anchor=(0.01, 0.01, 0.8, 0.8), bbox_transform=ax.transAxes, borderpad=0.2)
+	
+	inset_xmin, inset_ymin = transformer_inset.transform(lat1, lon1)
+	inset_xmax, inset_ymax = transformer_inset.transform(lat2, lon2)
+	iax.set_xlim(min(inset_xmin, inset_xmax), max(inset_xmin, inset_xmax))
+	iax.set_ylim(min(inset_ymin, inset_ymax), max(inset_ymin, inset_ymax))
+	
+	gdf_filt["normalized_contamination"] = Normalize()(gdf_filt['element_deltaX'])
+	# Sort GeoDataFrame based on normalized contamination
+	gdf_filt = gdf_filt.sort_values(by="normalized_contamination")
+	scatter = iax.scatter(gdf_filt.geometry.x, gdf_filt.geometry.y, c=gdf_filt["normalized_contamination"], cmap=cmap, s=50)
 
-
+	ctx.add_basemap(iax, source=ctx.providers.OpenTopoMap, zoom=11, attribution_size=0)
+	iax.set_xticks([]), iax.set_yticks([])
 
 def plot_contamination_map(file_name, element, opts):
 	gdf, gdf_filt, control_gdf = process_file(file_name, element, opts)
 	
 	cmap = ListedColormap([plt.cm.viridis(i / 10) for i in range(10)])
 	fig, ax = plt.subplots(figsize=(7, 6))
-	
+	fig.set_facecolor('white')
 	# Normalize the element_deltaX values for colormap
 	gdf_filt["normalized_contamination"] = Normalize()(gdf_filt['element_deltaX'])
 
@@ -125,9 +143,11 @@ def plot_contamination_map(file_name, element, opts):
 	# Plot the base map
 	ctx.add_basemap(ax, source=ctx.providers.OpenTopoMap)
 
+	# Calculate percentiles for the colorbar limits
+	vmin, vmax = np.percentile(gdf_filt['element_deltaX'], [10, 90])
+    
 	# Add a colorbar
-	sm = plt.cm.ScalarMappable(cmap=cmap, norm=Normalize(vmin=gdf_filt['element_deltaX'].min(), 
-														 vmax=gdf_filt['element_deltaX'].max()))
+	sm = plt.cm.ScalarMappable(cmap=cmap, norm=Normalize(vmin=vmin, vmax=vmax))
 	sm.set_array([])
 	colorbar = fig.colorbar(sm, ax=ax, orientation='vertical', shrink=0.4)
 	colorbar.set_label(f'Difference in {element} Concentration Relative to Control Point (ppm)')
@@ -152,4 +172,6 @@ def plot_contamination_map(file_name, element, opts):
 	plt.title(opts['plot_title'])
 	
 	add_inset_map(ax,-60.595,53.25, -60.30, 53.404,gdf,control_gdf) # Add inset map
+	add_inset_map2(ax,-60.4062,53.285, -60.3873, 53.296,gdf,gdf_filt) # Add inset map
+
 	plt.savefig(f"{opts['plot_dir']}contamination_map_{element}.png", dpi=300)
