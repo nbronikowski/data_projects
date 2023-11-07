@@ -86,7 +86,6 @@ out.depth_model = m_depth;
 
 %% PLOT ADCP and CMEMS Model
 figure()
-
 subplot(221)
 pcolor(out.seg_mid_time,-out.z_grid,out.ad2cp_u_z); shading interp
 colormap(gca,cmocean('balance'))
