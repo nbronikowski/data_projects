@@ -1,8 +1,8 @@
 clear; close all; clc;
 
 path_name = './mat_files/'
-var_name  = 'sunfish_data.mat'
-load(fullfile(path_name,var_name))
+var_name  = 'sunfish_data'
+load(fullfile([path_name,var_name,'.mat']))
 
 %% Basic Cleaning (not really scientific)
 
