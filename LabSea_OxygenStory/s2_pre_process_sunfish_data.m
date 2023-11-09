@@ -1,10 +1,14 @@
 clear; close all; clc;
 
+% Update Nov 9
+% - missing ecopuck processing for now
+
 path_name = './mat_files/'
 var_name  = 'sunfish_data'
 load(fullfile([path_name,var_name,'.mat']))
 
-%% Basic Cleaning (not really scientific)
+%% basic QC
+
 
 % compute datetime stamps
 sunfish.time = datetime(sunfish.time,'ConvertFrom','posixtime');
