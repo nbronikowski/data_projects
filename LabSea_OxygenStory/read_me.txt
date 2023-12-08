@@ -3,12 +3,11 @@
 % Part 1: Extract Glider Data from ERDDAP
 
 % Part 2: Data Preparation and Cleaning
-% - basic qc
-% - clean salinity and correct for thermal lag
-% - data gridding
-% - correct oxygen for response time lag
-% - compare T,S, O2 to nearby mooring/ship data to apply a calibration
-% - calculate optode drift from near-surface measurements
+% - basic qc [done]
+% - clean salinity and correct for thermal lag [done]
+% - data gridding [done]
+% - correct oxygen for response time lag [skipped]
+% - calculate optode sensor bias from ERA5 [done]
 
 % Part 3: Compute additional information
 % - mixed layer depth
