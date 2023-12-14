@@ -45,6 +45,12 @@ datetick('x','dd-mmm-yy')
 save_figure(gcf,['./plots/pearldiver_woa2018_optode_gains'],[7.5 5],['.png'],'300')
 
 
+id = dat.gridded.time<datenum(2020,04,01);
+nanmedian(O2_gains(id))
+nanmean(O2_gains(id))
+nanstd(O2_gains(id))
+
+
 
 % figure();
 % 

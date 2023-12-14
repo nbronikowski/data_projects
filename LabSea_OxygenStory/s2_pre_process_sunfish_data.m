@@ -9,7 +9,6 @@ load(fullfile([path_name,var_name,'.mat']))
 
 %% basic QC
 
-
 % compute datetime stamps
 sunfish.time = datetime(sunfish.time,'ConvertFrom','posixtime');
 
@@ -59,6 +58,48 @@ sunfish.raw_oxygen_concentration = optcalcO2(sunfish.temperature,...
                 sunfish.salinity_cor, 1013.25,sunfish.pressure); 
 
 
+%% Ecopuck Processing
+addpath('./processing_tools/');
+
+% Dark Counts Calc. in-situ
+sunfish.dateTime = sunfish.time;
+sunfish.dateNum = datenum(sunfish.time);
+data_range = sunfish.pressure>350 & sunfish.pressure<900 & ...
+    sunfish.dateNum>datenum(2022,01,20) & sunfish.dateNum<datenum(2022,04,01);
+
+% Backscatter 700nm 
+eco_bb_dark_counts = 47; % factory value
+eco_bb_scale_factor = 1.913E-06; % m-1 sr-1 / counts
+% eco_bb_dark_counts = 110; %min_75th_percentile(sunfish.bb700_sig(sunfisha_range))
+
+lambda = 700; % 700 nm backscatter 
+theta = 117; % angle of instrument
+VBSC  = eco_bb_scale_factor*(sunfish.bb700_sig-eco_bb_dark_counts);  
+
+% 1. Method Zhang et al., 2009 Volume Scattering of Seawater
+beta_sw=betasw(lambda, sunfish.temperature, theta, sunfish.salinity_cor);
+
+% Particle backscatter coefficient, BBP 
+Xp = 1.1; %recommended by WETLabs 2013
+sunfish.bbp700 = 2*pi*(VBSC - beta_sw) * Xp;
+
+% Chlorophyll
+eco_chl_dark_counts = 45; % factory value
+eco_chl_scale_factor = 0.0073; % micro-g L-1
+eco_chl_dark_counts = min_75th_percentile(sunfish.chlor_sig(data_range))
+sunfish.chlor  = eco_chl_scale_factor*(sunfish.chlor_sig-eco_chl_dark_counts);  
+
+% CDOM
+eco_cdom_dark_counts = 50;
+eco_cdom_scale_factor = 0.0904;
+eco_cdom_dark_counts = min_75th_percentile(sunfish.cdom_sig(data_range))
+sunfish.cdom  = eco_cdom_scale_factor*(sunfish.cdom_sig-eco_cdom_dark_counts);  
+
+% remove weird data
+sunfish.chlor(sunfish.chlor<0)=NaN;
+sunfish.bbp700(sunfish.bbp700<0)=NaN;
+sunfish.cdom(sunfish.cdom<0)=NaN;
+
 %% Gridding
 pg = 0:1:ceil(max(sunfish.pressure,[],'omitnan')); 
 timeDateNum = datenum(sunfish.time);
@@ -69,6 +110,10 @@ timeDateNum = datenum(sunfish.time);
 [~,~,conductivity] = pgrid_columns(sunfish.profile_index,sunfish.pressure,sunfish.conductivity,pg);
 [~,~,pressure] = pgrid_columns(sunfish.profile_index,sunfish.pressure,sunfish.pressure,pg);
 
+[~,~,chlor] = pgrid_columns(sunfish.profile_index,sunfish.pressure,sunfish.chlor,pg);
+[~,~,cdom] = pgrid_columns(sunfish.profile_index,sunfish.pressure,sunfish.cdom,pg);
+[~,~,bbp700] = pgrid_columns(sunfish.profile_index,sunfish.pressure,sunfish.bbp700,pg);
+
 [sunfish.gridded.temperature,~]=deleteAlmostEmptyColumns(temperature,pg);
 [sunfish.gridded.salinity,~]=deleteAlmostEmptyColumns(salinity,pg);
 [sunfish.gridded.conductivity,column_idx]=deleteAlmostEmptyColumns(conductivity,pg);
@@ -77,9 +122,14 @@ sunfish.gridded.profile_index = xu(column_idx);
 sunfish.gridded.pressure_grid = pg;
 sunfish.gridded.pressure = deleteAlmostEmptyColumns(pressure,pg);
 sunfish.gridded.oxygen_raw = oxygen_raw(:,column_idx);
+sunfish.gridded.chlor = chlor(:,column_idx);
+sunfish.gridded.cdom  = cdom(:,column_idx);
+sunfish.gridded.bbp700 = bbp700(:,column_idx);
 
+%% Add extra vars
+sunfish.gridded.timeg = mean(sunfish.gridded.time,1,'omitnan');
+sunfish.gridded.lon = interp1(sunfish.dateNum,sunfish.longitude,sunfish.gridded.timeg);
+sunfish.gridded.lat = interp1(sunfish.dateNum,sunfish.latitude,sunfish.gridded.timeg);
 
 %% Save result
-save(fullfile(path_name,[var_name,'_clean.mat']),'sunfish')
-
-
+save(fullfile(path_name,[var_name,'_clean.mat']),'sunfish','-v7.3')

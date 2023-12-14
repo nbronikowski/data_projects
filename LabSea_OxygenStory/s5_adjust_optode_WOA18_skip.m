@@ -61,6 +61,13 @@ datetick('x','dd-mmm-yy')
 save_figure(gcf,['./plots/sunfish_woa2018_optode_gains'],[7.5 5],['.png'],'300')
 
 
+id = dat.gridded.time<datenum(2022,04,01);
+nanmedian(O2_gains(id))
+nanmean(O2_gains(id))
+nanstd(O2_gains(id))
+
+
+
 % % APPLY CORRECTION
 % dat.gridded.O2con_adj = dat.gridded.oxygen_raw.*g.gcoef;
 % dat.gridded.O2sat_adj = O2ctoO2s(dat.gridded.O2con_adj,dat.gridded.temperature,...

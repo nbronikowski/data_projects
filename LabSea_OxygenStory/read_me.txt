@@ -11,9 +11,8 @@
 
 % Part 3: Compute additional information
 % - mixed layer depth
-% - chlorophyll, backscatter, cdom for Sunfish only
-% - potentially apply quenching correction for Sunfish data
+% - argo to verify oxygen
+% - chlorophyll, backscatter, cdom for Sunfish only [done]
+% - potentially apply quenching correction for Sunfish data [done]
 
 % Part 4: Analysis
-% - calculate column integrated heat, salt and oxygen content
-% - plot gradients in oxygen and show variability or "events"

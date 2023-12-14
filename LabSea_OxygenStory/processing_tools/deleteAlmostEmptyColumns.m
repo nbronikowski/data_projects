@@ -1,8 +1,13 @@
-function [subsetData,cols_to_keep]=deleteAlmostEmptyColumns(dat,depthg)
+function [subsetData,cols_to_keep]=deleteAlmostEmptyColumns(dat,depthg,thresh)
 
 [~, N] = size(dat);
 % Initialize a logical vector to identify columns to keep
 cols_to_keep = false(1, N);
+if nargin<3
+    threshS=50;
+else
+    threshS=thresh;
+end
 
 % Loop through each column to find the data span
 for t = 1:N
@@ -13,7 +18,7 @@ for t = 1:N
         data_span = max(depthg(non_nan_idx)) - min(depthg(non_nan_idx)) + 1; % Compute data span
         
         % Check if data span is at least 50
-        if data_span >= 50
+        if data_span >= threshS
             cols_to_keep(t) = true;
         end
     end
