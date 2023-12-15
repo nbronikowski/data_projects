@@ -74,7 +74,7 @@ pearldiver.raw_oxygen_concentration = optcalcO2(pearldiver.temperature,...
                     pearldiver.pressure); 
 
 %% Gridding
-pg = 0:1:ceil(max(pearldiver.pressure,[],'omitnan')); 
+pg = 0:1:1029;%ceil(max(pearldiver.pressure,[],'omitnan')); 
 timeDateNum = datenum(pearldiver.time);
 [~,~,time,xu] = pgrid_columns(pearldiver.profile_index,pearldiver.pressure,timeDateNum,pg);
 [~,~,oxygen_raw] = pgrid_columns(pearldiver.profile_index,pearldiver.pressure,pearldiver.raw_oxygen_concentration,pg);
@@ -91,5 +91,11 @@ pearldiver.gridded.time = time(:,column_idx);
 pearldiver.gridded.profile_index = xu(column_idx);
 pearldiver.gridded.pressure_grid = pg;
 pearldiver.gridded.pressure = deleteAlmostEmptyColumns(pressure,pg);
+
+%% Add extra vars
+pearldiver.dateNum = datenum(pearldiver.time);
+pearldiver.gridded.timeg = mean(pearldiver.gridded.time,1,'omitnan');
+pearldiver.gridded.lon = interp1(pearldiver.dateNum,pearldiver.longitude,pearldiver.gridded.timeg);
+pearldiver.gridded.lat = interp1(pearldiver.dateNum,pearldiver.latitude,pearldiver.gridded.timeg);
 
 save(fullfile(path_name,[var_name,'_clean.mat']),'pearldiver')

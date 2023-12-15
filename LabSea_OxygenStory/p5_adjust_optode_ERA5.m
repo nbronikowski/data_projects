@@ -3,7 +3,7 @@ clear; clc; close all;
 path_name = './mat_files/'
 var_name  = 'pearldiver_data'
 load(fullfile(path_name,[var_name,'_clean.mat']))
-dat = pearldiver;  clear pearldiver
+dat = pearldiver; 
 
 % load woa2018 data and compute gains ...
 load('./mat_files/pearldiver_era5_data.mat')
@@ -147,7 +147,10 @@ save_figure(gcf,['./plots/pearldiver_era5_optode_gains'],[7.5 5],['.png'],'300')
 %% Adjust Raw Oxygen using the median gain before May 1 calculated from the ERA5 pO2 comparison
 tthresh = datenum(2020,04,01);
 id = find(dat.time(~isnan(dat.time)) < tthresh);
-dat.adjusted_oxygen_concentration = dat.raw_oxygen_concentration*nanmedian(O2_gains(id));
-dat.gridded.oxygen_adjusted = dat.gridded.oxygen_raw*nanmedian(O2_gains(id));
+
+pearldiver.adjusted_oxygen_concentration = dat.raw_oxygen_concentration*nanmean(O2_gains(id));
+pearldiver.gridded.oxygen_adjusted = dat.gridded.oxygen_raw*nanmean(O2_gains(id));
 
 % save result
+save(fullfile(path_name,[var_name,'_oxy_qc.mat']),'pearldiver','-v7.3')
+

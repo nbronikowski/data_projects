@@ -31,7 +31,7 @@ function [var_intpy,var_avg] = gridcolumns(var,y,y_qc,yq,y_scale)
     %%%  interpolate along first dimension
     for j = 1:Nx
         flags = find(~isnan(var_avg(:,j)));
-        if length(flags)>2
+        if length(flags)>10
             min_y = min(yq(flags))-y_scale*0;
             max_y = max(yq(flags))+y_scale*0;
             [~,id1] = min(abs(yq-min_y));

@@ -13,14 +13,18 @@ function temp_intp=mean_interp(t,v,ti,extrap_flag)
     var_mean = accumarray(loc(:),temp_var(:))./accumarray(loc(:),1);
     idnan = find(~isnan(var_mean));
     
-    [~,id1]=nanmin(abs(ti-nanmin(x_mean(idnan))));
-    [~,id2]=nanmin(abs(ti-nanmax(x_mean(idnan))));
+
 %     id1 = loc(1);
 %     id2 = loc(end);
 %     
-    if extrap_flag>0.5
+    if extrap_flag>0.5 && length(idnan)>2
+        %     [~,id1]=nanmin(abs(ti-nanmin(x_mean(idnan))));
+        %     [~,id2]=nanmin(abs(ti-nanmax(x_mean(idnan))));
         temp_intp = interp1(x_mean(idnan),var_mean(idnan),ti,'linear','extrap');
-    else 
-        temp_intp = interp1(x_mean(idnan),var_mean(idnan),ti,'linear');
+    else,if length(idnan)>2
+            temp_intp = interp1(x_mean(idnan),var_mean(idnan),ti,'linear');
+        else
+            temp_intp = ti*NaN;
+        end
     end
 end

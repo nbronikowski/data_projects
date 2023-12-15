@@ -3,7 +3,7 @@ clear; clc; close all;
 path_name = './mat_files/'
 var_name  = 'sunfish_data'
 load(fullfile(path_name,[var_name,'_clean.mat']))
-dat = sunfish;  clear sunfish
+dat = sunfish; 
 
 % load era5 data and compute gains ...
 load('./mat_files/sunfish_era5_data.mat')
@@ -147,8 +147,10 @@ save_figure(gcf,['./plots/sunfish_era5_optode_gains'],[7.5 5],['.png'],'300')
 
 
 %% Adjust Raw Oxygen using the median gain before May 1 calculated from the ERA5 pO2 comparison
-
-dat.adjusted_oxygen_concentration = dat.raw_oxygen_concentration*nanmedian(O2_gains(id));
-dat.gridded.oxygen_adjusted = dat.gridded.oxygen_raw*nanmedian(O2_gains(id));
+tthresh = datenum(2022,04,01);
+id = find(dat.time(~isnan(dat.time)) < tthresh);
+sunfish.adjusted_oxygen_concentration = dat.raw_oxygen_concentration*nanmean(O2_gains(id));
+sunfish.gridded.oxygen_adjusted = dat.gridded.oxygen_raw*nanmean(O2_gains(id));
 
 % save result
+save(fullfile(path_name,[var_name,'_oxy_qc.mat']),'sunfish','-v7.3')

@@ -1,6 +1,6 @@
 clear; clc; close all;
 
-fpath = './nc/';
+fpath = './new_nc/';
 flist=dir([fpath,'*.nc']);
 
 out = ncinfo(fullfile([fpath,flist(40).name]));
@@ -25,8 +25,7 @@ VAR_LIST = ...
 'DOX2_ADJUSTED_QC'};
 
 % check if float has oxygen data and then copy data to a MAT Structure
-PG = 0:1:2500; PG=PG(:);
-
+PG = 0:1:1029; PG=PG(:);
 
 float_map = struct();
 for i = 1:length(VAR_LIST)
@@ -76,6 +75,38 @@ for i = 1:length(flist)
     end    
 end
 
+%% delete empty columns
+
+[~,colIdx]=deleteAlmostEmptyColumns(float_map.DOX2_ADJUSTED,PG);
+VAR_LIST = fieldnames(float_map);
+float_map2=struct();
+for j = 1:length(VAR_LIST)
+    float_map2.(VAR_LIST{j})=float_map.(VAR_LIST{j})(:,colIdx);
+end
+float_map = float_map2; clear float_map2
+
+figure()
+ti=tiledlayout(3,1);
+
+nexttile
+T = float_map.TEMP_ADJUSTED;
+T(float_map.TEMP_ADJUSTED_QC>1)=NaN;
+imagescn(float_map.TIME,-PG,T)
+
+nexttile
+S = float_map.PSAL_ADJUSTED;
+S(float_map.PSAL_ADJUSTED_QC>1)=NaN;
+imagescn(float_map.TIME,-PG,S);
+
+nexttile
+O2 = float_map.DOX2_ADJUSTED;
+O2(float_map.DOX2_ADJUSTED_QC>1)=NaN;
+imagescn(float_map.TIME,-PG,O2);
+
+
+float_map.DOX2_ADJUSTED(float_map.DOX2_ADJUSTED_QC>1)=NaN;
+
+%% plot
 ufloats = unique(float_map.WMO_ID(:));
 colList = seminfhaxby(length(ufloats)+10);
 
@@ -92,6 +123,14 @@ end
 legend(h,legendInfo,'location','bestoutside')
 formatplot
 t.TileSpacing='compact';
-subtitle(t,'Map of Argo Oxygen Profiles 2020 - 2020')
+subtitle(t,'Map of Argo Oxygen Profiles 2020 - 2022')
 save_figure(gcf,'ArgoFloatMap',[6 7],'.png','300')
+
+
+%% Save MAT file
+argo = float_map;
+argo.pgrid = PG;
+save('argo_oxygen.mat','argo');
+
+
 

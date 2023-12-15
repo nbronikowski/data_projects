@@ -101,7 +101,7 @@ sunfish.bbp700(sunfish.bbp700<0)=NaN;
 sunfish.cdom(sunfish.cdom<0)=NaN;
 
 %% Gridding
-pg = 0:1:ceil(max(sunfish.pressure,[],'omitnan')); 
+pg = 0:1:1029; %ceil(max(sunfish.pressure,[],'omitnan')); common grid
 timeDateNum = datenum(sunfish.time);
 [~,~,time,xu] = pgrid_columns(sunfish.profile_index,sunfish.pressure,timeDateNum,pg);
 [~,~,oxygen_raw] = pgrid_columns(sunfish.profile_index,sunfish.pressure,sunfish.raw_oxygen_concentration,pg);
