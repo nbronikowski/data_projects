@@ -14,7 +14,7 @@ dat.gridded.oxygen_raw_umolkg = dat.gridded.oxygen_raw./(dat.gridded.rho/1000);
 load('./ARGO/argo_oxygen.mat')
 
 % Co-locate glider and Argo measurements and store result
-idx = find(argo.TIME>=dat.gridded.timeg(1) & argo.TIME<=dat.gridded.timeg(end));
+idx = find(argo.TIME>=dat.gridded.timeg(1) & argo.TIME<=datenum(2020,05,20));
 
 GL_VAR_LIST = fieldnames(dat.gridded);
 AR_VAR_LIST = fieldnames(argo);
@@ -50,7 +50,7 @@ t = tiledlayout(2,2);
 
 
 nexttile; hold on
-colMAP = seminfhaxby(length(glProfs.timeg)+2);
+colMAP = flipud(seminfhaxby(length(glProfs.timeg)+2));
 for i = 1:length(glProfs.timeg)
     plot(glProfs.salinity(:,i),-glProfs.pressure(:,i),'Color',colMAP(i,:),'LineWidth',1.5);
     plot(glProfs.argo.PSAL_ADJUSTED(:,i),-glProfs.argo.pgrid(:,i),'Color',colMAP(i,:));
@@ -90,7 +90,7 @@ formatplot
 legend([h1 h2],{'glider','ARGO'},'Location','SE')
 title('(d)')
 
-subtitle(t,'Difference Pearldiver and Argo Co-located Profiles (30 km, 5 days)')
+subtitle(t,'Pearldiver and Argo Co-located Profiles (30 km, 5 days)')
 t.TileSpacing='compact';
 save_figure(gcf,['./plots/pearldiver_argo_profiles'],[7.5 4.5],'.png','300')
 
@@ -101,7 +101,6 @@ t = tiledlayout(2,2);
 
 
 nexttile; hold on
-colMAP = seminfhaxby(length(glProfs.timeg)+2);
 for i = 1:length(glProfs.timeg)
     plot(glProfs.salinity(:,i)-glProfs.argo.PSAL_ADJUSTED(:,i),-glProfs.pressure(:,i),'Color',colMAP(i,:),'LineWidth',1.5);
 end

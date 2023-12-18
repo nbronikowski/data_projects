@@ -62,12 +62,28 @@ pO2wet_100m = interp1(time_100m(id),pO2wet_100m(id),dat.time);
 % This is getting under/super saturation
 d_O2wet_a = (pO2wet_1m ./dat.pO2ref)-1; % glider near  air 1m
 d_O2air_a = (pO2air_1m ./dat.pO2ref)-1; % era5 data 
+d_O2wet_w2m = (pO2wet_2m ./dat.pO2ref)-1;
+
+%% Carry Over Effect:
+% From github ARGO Canada DMQC
+x1 = pO2wet_1m - pO2air_1m;
+y1 = pO2wet_2m - pO2air_1m;
+
+id = ~isnan(x1) & ~isnan(y1);
+x1 = x1(id);
+y1 = y1(id);
+X = [x1, ones(length(x1), 1)];  % Adding a column of ones for intercept
+c = X \ y1;
+c = c(1);
+
+O2_gains = ((1-c)*pO2air_1m(id))./(pO2wet_1m(id) - c*pO2wet_2m(id));
+
+plot(dat.time(id),O2_gains,'.')
 
 % This is how I would estimate the gain ref vs measured to adjust
 % O2_gains= (pO2air_1m./ pO2wet_1m); % simple absolute gain based on pO2
 % air should be pO2 glider at surface
-
-O2_gains= (d_O2air_a+1)./(d_O2wet_a+1); 
+O2_gains_o= (d_O2air_a(id)+1)./(d_O2wet_a(id)+1); 
 
 %% Stuff from Nicholson 2017 -- trying to recreate plots
 d_O2wet_a = (pO2wet_1m ./dat.pO2ref)-1; % glider near  air 1m
