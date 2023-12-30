@@ -27,6 +27,17 @@ pO2_ref = 0.20946*(1013.25-psat);               % mbar Theoretical in-air
 
 pO2wet_1m = nanmean(pO2_opt(1:2,:),1); % surface O2
 pO2wet_2m = nanmean(pO2_opt(3:5,:),1); % subsurface
+
+% only grab ascends
+for i = 1:length(dat.gridded.profile_index)
+    idx = dat.profile_index==dat.gridded.profile_index(i);
+    dat.gridded.profile_direction(i) = nanmedian(dat.profile_direction(idx));
+end
+
+idx = dat.gridded.profile_direction==1;
+pO2wet_1m(~idx)=NaN;
+pO2wet_2m(~idx)=NaN;
+
 depth_1m  = nanmean(dat.gridded.pressure(1:2,:),1);
 
 
@@ -44,7 +55,7 @@ x1 = x1(:); y1 = y1(:);
 id = ~isnan(x1) & ~isnan(y1);
 x1 = x1(id);
 y1 = y1(id);
-X = [x1, ones(length(x1), 1)];  % Adding a column of ones for intercept
+X = [x1,ones(length(x1),1)];  % Adding a column of ones for intercept
 c = X \ y1;
 c = c(1);
 
@@ -72,6 +83,8 @@ tthresh = datenum(2022,04,01);
 id = find(dat.gridded.timeg(~isnan(dat.gridded.timeg)) < tthresh);
 id2 = find(dat.gridded.timeg(~isnan(dat.gridded.timeg)) > tthresh);
 
+idInvalid = (O2_gains > nanmean(O2_gains(id))+2.5*std(O2_gains(id), [], "all", "omitnan")) | (O2_gains < nanmean(O2_gains(id))-2.5*std(O2_gains(id), [], "all", "omitnan")) ; % get 
+% O2_gains(idInvalid)=NaN;
 
 % Create a figure
 figure;
@@ -81,19 +94,22 @@ t = tiledlayout(2, 2);
 
 % Create the first tile
 nexttile([1 2]);
+
+
 hold on;
 h1 = plot(dat.gridded.timeg, O2_gains, '.');
 h2 = plot(dat.gridded.timeg, dat.gridded.timeg*0 + nanmedian(O2_gains(id)), '-b');
 h3 = plot(dat.gridded.timeg, dat.gridded.timeg*0 + nanmean(O2_gains(id)), '-r');
 h4 = plot(dat.gridded.timeg, dat.gridded.timeg*0 + nanmean(O2_gains(id)) - std(O2_gains(id), [], "all", "omitnan"), '--k');
 plot(dat.gridded.timeg, dat.gridded.timeg*0 + nanmean(O2_gains(id)) + std(O2_gains(id), [], "all", "omitnan"), '--k');
-plot([tthresh tthresh], [0.9 1.2], ':', 'Color', [.6 .6 .6]);
+plot([tthresh tthresh],  get(gca,'YLim'), ':', 'Color', [.6 .6 .6]);
 legend([h1 h2 h3 h4], {'gains', ...
     ['median (',num2str(round(nanmedian(O2_gains(id)),3)),')'], ...
     ['mean (',num2str(round(nanmean(O2_gains(id)),3)),')'], ...
     ['\pm 1\sigma (',num2str(round(nanstd(O2_gains(id)),3)),')'],...
     }, 'Location', 'best');
-ylabel('gain (\Delta O^{air}_{2,a} / \Delta O^{wet}_{2,a})');
+ylabel('gain');
+% ylim([0.6 1.2])
 xlim([datenum(2022, 01, 01) datenum(2022, 05, 30)]);
 datetick('x', 'dd-mmm-yy');
 title('(a)','HorizontalAlignment','left')
@@ -104,9 +120,9 @@ nexttile;
 hold on;
 h = histogram(O2_gains(id));
 h2 = histogram(O2_gains(id2), 'FaceColor', 'm', 'BinWidth', h.BinWidth);
-h3 = plot([nanmean(O2_gains(id)) nanmean(O2_gains(id))], [0 100], '-r', 'LineWidth', 2);
-h4 = plot([nanmedian(O2_gains(id)) nanmedian(O2_gains(id))], [0 100], '-b', 'LineWidth', 2);
-xlabel('gain factor \Delta O^{air}_{2,a} / \Delta O^{wet}_{2,a}');
+h3 = plot([nanmean(O2_gains(id)) nanmean(O2_gains(id))], [0 120], '-r', 'LineWidth', 2);
+h4 = plot([nanmedian(O2_gains(id)) nanmedian(O2_gains(id))], [0 120], '-b', 'LineWidth', 2);
+xlabel('gain');
 ylabel('count');
 title('(b)','HorizontalAlignment','left')
 legend('gains (t<01-04-2022)', 'gains (t>01-04-2022)', 'mean', 'median', 'Location', 'best');
@@ -115,12 +131,11 @@ formatplot;
 
 % Format date tick labels
 nexttile; hold on
-plot(d_O2wet_w2m*100+100,d_O2wet_a*100+100,'*');
-plot([82 95],[82 95],':k')
-xlim([82 95])
-ylim([82 95])
-ylabel('O^{wet,a}_2 / %')
-xlabel('O^{wet, 2m}_2 / %')
+plot(x1,y1,'*');
+plot([-40 20],[-40 20],':k')
+ylim([-40 20]); xlim([-40 20]);
+ylabel('\Delta pO^{wet,z<1m}_2 / mbar')
+xlabel('\Delta pO^{wet,1<z<2.5m}_2 / mbar')
 formatplot
 title('(c)','HorizontalAlignment','left')
 legend('glider data','1:1 fit','location','best')
@@ -136,7 +151,9 @@ tthresh = datenum(2022,04,01);
 id = find(dat.gridded.timeg < tthresh);
 sunfish.adjusted_oxygen_concentration = dat.raw_oxygen_concentration*nanmean(O2_gains(id));
 sunfish.gridded.oxygen_adjusted = dat.gridded.oxygen_raw*nanmean(O2_gains(id));
-
-% save result
+% 
+% % save result
 save(fullfile(path_name,[var_name,'_oxy_qc.mat']),'sunfish','-v7.3')
 
+pO2err=2*nanstd(O2_gains(id))*205
+pO2toO2conc(pO2err,3,34.6,1013.25,1)
