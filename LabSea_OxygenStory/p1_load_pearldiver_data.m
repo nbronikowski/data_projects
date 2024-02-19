@@ -14,8 +14,8 @@ variables = [...
     'abs_salinity,density,oxygen_calphase'];
 
 % Time constraints for the query
-startTime = '2020-01-15T00:00:00Z'; % start of Central LabSea data
-endTime = '2020-05-25T00:00:00Z';   % end of Central LabSea data
+startTime = '2019-12-04T00:00:00Z'; % start of Central LabSea data
+endTime = '2020-06-25T00:00:00Z';   % end of Central LabSea data
 
 options = weboptions('Timeout', 300); % Increase timeout to 5 min
 

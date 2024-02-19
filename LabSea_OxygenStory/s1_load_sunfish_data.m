@@ -17,8 +17,8 @@ variables = [...
             ];
 
 % Time constraints for the query
-startTime = '2022-01-16T00:00:00Z'; % start of 53 N LabSea data
-endTime = '2022-05-20T00:00:00Z';   % end of 53 N LabSea data
+startTime = '2021-12-05T00:00:00Z'; % start of 53 N LabSea data
+endTime = '2022-06-8T00:00:00Z';   % end of 53 N LabSea data
 
 options = weboptions('Timeout', 300); % Increase timeout to 5 min
 

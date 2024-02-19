@@ -13,7 +13,7 @@ load(fullfile([path_name,var_name,'.mat']))
 sunfish.time = datetime(sunfish.time,'ConvertFrom','posixtime');
 
 % do some basic QC'ing to get rid of weird data and too many nan's.
-idbad = (sunfish.temperature==1) | (sunfish.conductivity<1);
+idbad = (sunfish.temperature==1) |  (sunfish.temperature==0) | (sunfish.conductivity<1);
 sunfish.temperature(idbad)=NaN;
 sunfish.conductivity(idbad)=NaN;
 

@@ -164,7 +164,7 @@ formatplot
 title('(c)')
 
 nexttile; hold on
-topoplot([-54  -50  55.5   58.2],[],[0:-1/2:-5],'-k')
+topoplot([-54  -50  50.5   58.2],[],[0:-1/2:-5],'-k')
 plot(dat.gridded.lon,dat.gridded.lat,'.','MarkerSize',0.1);
 h1=plot(glProfs.lon,glProfs.lat,'*m'); 
 h2=plot(glProfs.argo.LONGITUDE,glProfs.argo.LATITUDE,'s','MarkerFaceColor','b','MarkerEdgeColor','k')
@@ -211,7 +211,7 @@ formatplot
 title('(c)')
 
 nexttile; hold on
-topoplot([-54  -50  55.5   58.2],[],[0:-1/2:-5],'-k')
+topoplot([-54  -50  50   58.2],[],[0:-1/2:-5],'-k')
 plot(dat.gridded.lon,dat.gridded.lat,'.','MarkerSize',0.1);
 h1=plot(glProfs.lon,glProfs.lat,'*m'); 
 h2=plot(glProfs.argo.LONGITUDE,glProfs.argo.LATITUDE,'s','MarkerFaceColor','b','MarkerEdgeColor','k')

@@ -5,12 +5,12 @@ var_name  = 'pearldiver_data'
 load(fullfile(path_name,[var_name,'.mat']))
 
 %% basic QC
-
+addpath('./processing_tools/');
 % compute datetime stamps
 pearldiver.time = datetime(pearldiver.time,'ConvertFrom','posixtime');
 
 % do some basic QC'ing to get rid of weird data and too many nan's.
-idbad = (pearldiver.temperature<1) | (pearldiver.conductivity<1);
+idbad = (pearldiver.temperature==0)|  (pearldiver.temperature==1) | (pearldiver.conductivity<1);
 pearldiver.temperature(idbad)=NaN;
 pearldiver.conductivity(idbad)=NaN;
 
@@ -18,18 +18,30 @@ pearldiver.conductivity(idbad)=NaN;
 idnan = find(~isnan(pearldiver.conductivity));
 idSpike = abs(sgolayfilt(pearldiver.conductivity(idnan),3,11)-pearldiver.conductivity(idnan))>0.04;
 
-% figure();
-% hold on
-% plot(pearldiver.time(idnan),pearldiver.conductivity(idnan));
-% plot(pearldiver.time(idnan(idSpike)),pearldiver.conductivity(idnan(idSpike)),'*m')
+figure();
+hold on
+plot(pearldiver.time(idnan),pearldiver.conductivity(idnan));
+plot(pearldiver.time(idnan(idSpike)),pearldiver.conductivity(idnan(idSpike)),'*m')
 
 pearldiver.conductivity(idnan(idSpike))=NaN;
 pearldiver.temperature(idnan(idSpike))=NaN;
 pearldiver.pressure(idnan(idSpike))=NaN;
 
 % oxygen calphase has a lot of spikes
-idbad = (pearldiver.oxygen_calphase<33) | isnan(pearldiver.temperature);
-pearldiver.oxygen_calphase(idbad)=NaN;
+pearldiver.oxygen_calphase_raw = pearldiver.oxygen_calphase;
+pearldiver.oxygen_calphase(pearldiver.oxygen_calphase<32)=NaN;
+idnan = ~isnan(pearldiver.temperature);
+pearldiver.oxygen_calphase = interp1(pearldiver.time(idnan),pearldiver.oxygen_calphase(idnan),pearldiver.time);
+pearldiver.oxygen_calphase(~idnan)=NaN;
+
+plot(pearldiver.time,pearldiver.oxygen_calphase_raw,'.b'); hold on
+plot(pearldiver.time,pearldiver.oxygen_calphase,'.r'); 
+
+yyaxis right
+plot(pearldiver.time,pearldiver.temperature,'.'); 
+
+
+
 
 % further step remove spikes from surface periods and science aux power
 % fluctuations - SBMBII
@@ -84,13 +96,17 @@ timeDateNum = datenum(pearldiver.time);
 [~,~,pressure] = pgrid_columns(pearldiver.profile_index,pearldiver.pressure,pearldiver.pressure,pg);
 
 [pearldiver.gridded.oxygen_raw,column_idx]=deleteAlmostEmptyColumns(oxygen_raw,pg);
-[pearldiver.gridded.temperature,~]=deleteAlmostEmptyColumns(temperature,pg);
-[pearldiver.gridded.salinity,~]=deleteAlmostEmptyColumns(salinity,pg);
-[pearldiver.gridded.conductivity,~]=deleteAlmostEmptyColumns(conductivity,pg);
+% [pearldiver.gridded.temperature,~]=deleteAlmostEmptyColumns(temperature,pg);
+% [pearldiver.gridded.salinity,~]=deleteAlmostEmptyColumns(salinity,pg);
+% [pearldiver.gridded.conductivity,~]=deleteAlmostEmptyColumns(conductivity,pg);
 pearldiver.gridded.time = time(:,column_idx);
 pearldiver.gridded.profile_index = xu(column_idx);
 pearldiver.gridded.pressure_grid = pg;
-pearldiver.gridded.pressure = deleteAlmostEmptyColumns(pressure,pg);
+% pearldiver.gridded.pressure = deleteAlmostEmptyColumns(pressure,pg);
+pearldiver.gridded.temperature = temperature(:,column_idx);
+pearldiver.gridded.salinity = salinity(:,column_idx);
+pearldiver.gridded.conductivity = conductivity(:,column_idx);
+pearldiver.gridded.pressure = pressure(:,column_idx);
 
 %% Add extra vars
 pearldiver.dateNum = datenum(pearldiver.time);
