@@ -38,11 +38,11 @@ era5.rh = nan*era5.time;
 for i = 1:length(era5.time)
     time_idx = ttime == era5.time(i);
     [~,idx2] = min(abs(dat.time - era5.time(i)),[],'omitnan');
-    [~,lon_idx] = min(abs(lon-dat.longitude(idx2)));
-    [~,lat_idx] = min(abs(lat-dat.latitude(idx2)));
-    era5.slp(i) = slp(lat_idx,lon_idx,time_idx); 
-    era5.rh(i) = RH(lat_idx,lon_idx,time_idx);
-    era5.ta(i) = t2mC(lat_idx,lon_idx,time_idx);
+    [~,lon_idx] = min(abs(lon-dat.longitude(idx2)),[],'omitnan');
+    [~,lat_idx] = min(abs(lat-dat.latitude(idx2)),[],'omitnan');
+    era5.slp(i) = slp(lon_idx,lat_idx,time_idx); 
+    era5.rh(i) = RH(lon_idx,lat_idx,time_idx);
+    era5.ta(i) = t2mC(lon_idx,lat_idx,time_idx);
 end
 save([path_name,'sunfish_era5_data.mat'],'era5')
 
@@ -63,9 +63,9 @@ for i = 1:length(era5.time)
     [~,idx2] = min(abs(dat.time - era5.time(i)),[],'omitnan');
     [~,lon_idx] = min(abs(lon-dat.longitude(idx2)));
     [~,lat_idx] = min(abs(lat-dat.latitude(idx2)));
-    era5.slp(i) = slp(lat_idx,lon_idx,time_idx); 
-    era5.rh(i) = RH(lat_idx,lon_idx,time_idx);
-    era5.ta(i) = t2mC(lat_idx,lon_idx,time_idx);
+    era5.slp(i) = slp(lon_idx,lat_idx,time_idx); 
+    era5.rh(i) = RH(lon_idx,lat_idx,time_idx);
+    era5.ta(i) = t2mC(lon_idx,lat_idx,time_idx);
 end
 save([path_name,'pearldiver_era5_data.mat'],'era5')
 

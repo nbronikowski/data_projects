@@ -9,28 +9,30 @@ dat = pearldiver;
 load('./mat_files/pearldiver_era5_data.mat')
 
 dat.time = datenum(dat.time);
+idt = dat.time>datenum(2020,01,15) & dat.time<datenum(2020,05,15);
+gtime = dat.time(idt);
 
 id = ~isnan(dat.depth);
-dat.depth = interp1gap(dat.time,dat.depth,dat.time,30/86400);
+depth = interp1gap(dat.time,dat.depth,gtime,30/86400);
 
-dat.slp = interp1(era5.time,era5.slp,dat.time);
-dat.rh  = interp1(era5.time,era5.rh, dat.time);
-dat.ta  = interp1(era5.time,era5.ta, dat.time);
-dat.pH2O  = vpress(dat.salinity,dat.temperature); % atm
+slp = interp1(era5.time,era5.slp,gtime);
+rh  = interp1(era5.time,era5.rh, gtime);
+ta  = interp1(era5.time,era5.ta, gtime);
+pH2O  = vpress(dat.salinity(idt),dat.temperature(idt)); % atm
 
 % Compute Partial Pressure Oxygen Air and Wet
-dat.pO2air = (dat.slp/101325-dat.pH2O.*dat.rh)*0.20946*1013.25; % mbar
-dat.pO2wet = O2ctoO2p(dat.raw_oxygen_concentration,dat.temperature,...
-    dat.salinity,dat.pressure);
+pO2air = (slp/101325-pH2O.*rh)*0.20946*1013.25; % mbar
+pO2wet = O2ctoO2p(dat.raw_oxygen_concentration(idt),dat.temperature(idt),...
+    dat.salinity(idt),dat.pressure(idt));
 
-psat = satvap(dat.ta,dat.slp*0.01);
-dat.pO2ref = 0.20946*(1013.25-psat); % mbar 
+psat = satvap(ta,slp*0.01);
+pO2ref = 0.20946*(1013.25-psat); % mbar 
 
 %% Next Extract Surface Measuring Intervals
-ids=  dat.depth<1; % picking surface points
-pO2wet_1m = interp1gap(dat.time(ids),dat.pO2wet(ids),dat.time,30/86400);
-pO2air_1m = interp1gap(dat.time(ids),dat.pO2air(ids),dat.time,30/86400);
-depth_1m  = interp1gap(dat.time(ids),dat.depth(ids),dat.time,30/86400);
+ids=  depth<1; % picking surface points
+pO2wet_1m = interp1gap(gtime(ids),pO2wet(ids),gtime,30/86400);
+pO2air_1m = interp1gap(gtime(ids),pO2air(ids),gtime,30/86400);
+depth_1m  = interp1gap(gtime(ids),depth(ids),gtime,30/86400);
 
 
 uprofs = unique(dat.profile_index(~isnan(dat.profile_index)));
@@ -39,11 +41,11 @@ pO2wet_100m = [];
 time_2m = [];
 % extract ascending to surface pO2 measurements inside 1 - 2.5 m band
 for i = 1:length(uprofs)
-    prof_id = dat.profile_index == uprofs(i) ...
-        & dat.profile_direction == -1;
-    temp_pO2wet = dat.pO2wet(prof_id);
-    temp_depth  = dat.depth(prof_id);
-    temp_time   = dat.time(prof_id);
+    prof_id = dat.profile_index(idt) == uprofs(i) ...
+        & dat.profile_direction(idt) == 1;
+    temp_pO2wet = pO2wet(prof_id);
+    temp_depth  = depth(prof_id);
+    temp_time   = gtime(prof_id);
     
     idz = temp_depth>1 & temp_depth<2.5;
     idz2 = temp_depth>100 & temp_depth<102;
@@ -53,16 +55,16 @@ for i = 1:length(uprofs)
     time_100m(i) = nanmean(temp_time(idz2));
 end
 id = ~isnan(pO2wet_2m);
-pO2wet_2m = interp1(time_2m(id),pO2wet_2m(id),dat.time);
+pO2wet_2m = interp1(time_2m(id),pO2wet_2m(id),gtime);
 
 id = ~isnan(pO2wet_100m);
-pO2wet_100m = interp1(time_100m(id),pO2wet_100m(id),dat.time);
+pO2wet_100m = interp1(time_100m(id),pO2wet_100m(id),gtime);
 
 
 % This is getting under/super saturation
-d_O2wet_a = (pO2wet_1m ./dat.pO2ref)-1; % glider near  air 1m
-d_O2air_a = (pO2air_1m ./dat.pO2ref)-1; % era5 data 
-d_O2wet_w2m = (pO2wet_2m ./dat.pO2ref)-1;
+d_O2wet_a = (pO2wet_1m ./pO2ref)-1; % glider near  air 1m
+d_O2air_a = (pO2air_1m ./pO2ref)-1; % era5 data 
+d_O2wet_w2m = (pO2wet_2m ./pO2ref)-1;
 
 %% Carry Over Effect:
 % From github ARGO Canada DMQC
@@ -78,7 +80,7 @@ c = c(1);
 
 O2_gains = ((1-c)*pO2air_1m(id))./(pO2wet_1m(id) - c*pO2wet_2m(id));
 
-plot(dat.time(id),O2_gains,'.')
+plot(gtime(id),movmedian(O2_gains,30),'.')
 
 % This is how I would estimate the gain ref vs measured to adjust
 % O2_gains= (pO2air_1m./ pO2wet_1m); % simple absolute gain based on pO2
@@ -110,7 +112,7 @@ t = tiledlayout(2, 2);
 % Create the first tile
 nexttile([1 2]);
 hold on;
-h1 = plot(dat.time, O2_gains, '.');
+h1 = plot(dat.time(id), O2_gains, '.');
 h2 = plot(dat.time, dat.time*0 + nanmedian(O2_gains(id)), '-b');
 h3 = plot(dat.time, dat.time*0 + nanmean(O2_gains(id)), '-r');
 h4 = plot(dat.time, dat.time*0 + nanmean(O2_gains(id)) - std(O2_gains(id), [], "all", "omitnan"), '--k');
