@@ -1,9 +1,5 @@
 clear; close all; clc
 
-%% COMPUTE COLUMN INVENTORY and then produce MLD fluxes from 1hr vs 14 day subsampling and show the result. 
-% MLD and below MLD comparison -> entrainment?? What does it really
-% signify?? 
-
 path_name = './mat_files/';
 var_name  = 'pearldiver_data';
 load(fullfile(path_name,[var_name,'_oxy_qc.mat']));

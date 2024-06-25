@@ -75,42 +75,66 @@ dat2 = dat; clear dat;
 
 figure(); 
 
-% t = tiledlayout(2,2,'TileSpacing','compact');
+t = tiledlayout(2,2,'TileSpacing','tight','Padding','tight');
 
-subplot(2,2,[2,4]); hold on
-
-contourf(lon,lat,nanmean(PMLD(:,:,id),3)');
-% contour(lon,lat,nanmean(PMLD(:,:,id),3)','levellist',800,'color','m','linewidth',2);
-cb1=colorbar; cb1.TickLength = 0.045;
-borders('Canada','facecolor','k'); 
-ylabel(cb1,'MLD[\sigma_{\theta}<0.05 kg m^{-3}] / m')
-colormap(gca,cmocean('amp',8));
-caxis([200 1800])
-formatplot
-title('Map of Memorial Glider Deployments 2020 - 2022')
-[lat,lon] = meshgrid(44:1/12:66,-66:1/12:-44);
-Z = topo_interp(lat,lon);
-contour(lon,lat,Z,'LevelList',[-3000:1000:-1000],'color','m')
-
-idgl = ~isnan(dat2.longitude);%dat2.dateNum>datenum(2020,01,15) & dat2.dateNum<datenum(2020,05,15);
-% plot(dat1.longitude(~idgl),dat1.latitude(~idgl),'o','MarkerEdgeColor','none','MarkerFaceColor','b','MarkerSize',2)
-h1=plot(dat2.longitude(idgl),dat2.latitude(idgl),'-g','linewidth',2);%'o','MarkerEdgeColor','none','MarkerFaceColor','r','MarkerSize',3)
-
-idgl = ~isnan(dat1.longitude);%dat1.dateNum>datenum(2022,01,15) & dat1.dateNum<datenum(2022,05,15);
-% plot(dat1.longitude(~idgl),dat1.latitude(~idgl),'o','MarkerEdgeColor','none','MarkerFaceColor','b','MarkerSize',2)
-h2=plot(dat1.longitude(idgl),dat1.latitude(idgl),'-b','linewidth',2);%'o','MarkerEdgeColor','none','MarkerFaceColor','b','MarkerSize',3)
-legend([h1 h2],{'Pearldiver','Sunfish'},'Location','best')
-
-
-%% Pearldiver
-subplot(221); hold on;
+% Pearldiver
+nexttile(t,1,[1 1]); hold on;
 idgl = dat2.gridded.lon<-51.3 & dat2.gridded.lat>56 & dat2.gridded.timeg<datenum(2020,05,20);
 dat2.gridded.dist = pathdist(dat2.gridded.lat,dat2.gridded.lon,'km');
 dt = gradient(dat2.gridded.timeg(idgl))*24;
 dx = gradient(dat2.gridded.dist(idgl));
-
-[N,Xedges,Yedges] = histcounts2(dx,dt,[0:0.1:5],[0:0.1:3.5]);
+[N,~,~] = histcounts2(dx,dt,[0:0.1:5],[0:0.1:3.5]);
 pcolor([0.1:0.1:5]',[0.1:0.1:3.5]',N'); shading flat
+plot(nanmedian(dx),nanmedian(dt),'o','MarkerFaceColor','m','MarkerEdgeColor','k','MarkerSize',10);
+text(1,1,{['median dx = ',num2str(round(nanmean(dx),2)),' km'];['median dt = ',num2str(round(nanmean(dt),2)),' hrs']});
+xlabel('dx / km')
+ylabel('dt / hours');
+colormap(gca,cmocean('tempo',10));
+caxis([0 10])
+cb = colorbar;
+ylabel(cb,'Profile Counts')
+formatplot;
+xlim([0 5]);
+ylim([0.1 3.5])
+title('Pearldiver')
+
+
+
+k1_mor = [-52.6412833, 56.5699833];
+k78910_mor = [-51.5516833,	52.8436833;...
+              -51.3082167,	52.96135; ...
+              -50.8669167,	53.1339833; ...
+              -50.2399167,	53.3913];
+
+nexttile(t,2,[2 1]); hold on
+contourf(lon,lat,nanmean(PMLD(:,:,id),3)');
+cb1=colorbar; cb1.TickLength = 0.045;
+borders('Canada','facecolor','k'); 
+ylabel(cb1,'Z_{mld} / m')
+colormap(gca,cmocean('amp',8));
+caxis([200 1800])
+formatplot
+title('Glider Missions 2020 - 2022')
+[lat,lon] = meshgrid(44:1/12:60.5,-66:1/12:-44);
+Z = topo_interp(lat,lon);
+contour(lon,lat,Z,'LevelList',[-3000:1000:-1000],'color','m')
+idgl = ~isnan(dat2.longitude);
+h1=plot(dat2.longitude(idgl),dat2.latitude(idgl),'-g','linewidth',2);%'o','MarkerEdgeColor','none','MarkerFaceColor','r','MarkerSize',3)
+idgl = ~isnan(dat1.longitude);
+h2=plot(dat1.longitude(idgl),dat1.latitude(idgl),'-b','linewidth',2);%'o','MarkerEdgeColor','none','MarkerFaceColor','b','MarkerSize',3)
+h3=plot(k78910_mor(:,1),k78910_mor(:,2),'o','MarkerEdgeColor','k','MarkerFaceColor','r','MarkerSize',5);
+h4=plot(k1_mor(:,1),k1_mor(:,2),'p','MarkerEdgeColor','k','MarkerFaceColor','y','MarkerSize',10);
+legend([h1 h2 h3 h4],{'Pearldiver','Sunfish','53N Array','K1 Mooring'},'Location','SW')
+ylim([44 60.5])
+
+% Sunfish
+nexttile(t,3,[1 1]); hold on
+idgl = dat1.gridded.timeg>datenum(2022,01,01) & dat1.gridded.timeg<datenum(2022,05,15) & ~isnan(dat1.gridded.lat);
+dat1.gridded.dist = pathdist(dat1.gridded.lat(idgl),dat1.gridded.lon(idgl),'km');
+dt = [0;row2col(diff(dat1.gridded.timeg(idgl)))]*24;
+dx = [0;row2col(diff(dat1.gridded.dist))];
+[N,Xedges,Yedges] = histcounts2(dx,dt,[0:0.1:6],[0:0.1:6]);
+pcolor([0.1:0.1:6]',[0.1:0.1:6]',N'); shading flat
 plot(nanmedian(dx),nanmedian(dt),'o','MarkerFaceColor','m','MarkerEdgeColor','k','MarkerSize',10);
 text(1,1,{['median dx = ',num2str(round(nanmean(dx),2)),' km'];['median dt = ',num2str(round(nanmean(dt),2)),' hrs']});
 xlabel('dx / km')
@@ -122,39 +146,8 @@ cb = colorbar;
 ylabel(cb,'Profile Counts')
 formatplot;
 xlim([0 5]);
-ylim([0.1 3.5])
-title('Pearldiver Profile Spacing')
+ylim([0.1 4])
+title('Sunfish')
 
 
-
-subplot(223); hold on
-idgl = dat1.gridded.timeg>datenum(2022,02,01) & dat1.gridded.timeg<datenum(2022,04,20) & ~isnan(dat1.gridded.lat);
-dat1.gridded.dist = pathdist(dat1.gridded.lat,dat1.gridded.lon,'km');
-dt = gradient(dat1.gridded.timeg(idgl))*24;
-dx = gradient(dat1.gridded.dist(idgl));
-[N,Xedges,Yedges] = histcounts2(dx,dt,[0:0.1:5],[0:0.1:3.5]);
-pcolor([0.1:0.1:5]',[0.1:0.1:3.5]',N'); shading flat
-plot(nanmedian(dx),nanmedian(dt),'o','MarkerFaceColor','m','MarkerEdgeColor','k','MarkerSize',10);
-text(1,1,{['median dx = ',num2str(round(nanmean(dx),2)),' km'];['median dt = ',num2str(round(nanmean(dt,2))),' hrs']});
-xlabel('dx / km')
-ylabel('dt / hours');
-colormap(gca,cmocean('tempo',10));
-caxis([0 10])
-cb = colorbar;
-% cb.Location = 'SouthOutside';
-ylabel(cb,'Profile Counts')
-formatplot;
-xlim([0 5]);
-ylim([0.1 3.5])
-title('Sunfish Profile Spacing')
-
-
-
-% 
-% ax1= gca;
-% 
-% ax2.Position = [0.47 0.12 0.4 0.8];
-% ax1.Position = [0.09 0.35 0.3 0.57];
-% cb1.Position = [0.876 0.12 0.02 0.8];
-% 
 save_figure(gcf,'./plots/deployment_map',[7.5 4],'.png','300')
